@@ -45,3 +45,39 @@ def category_stats(request):
             )
       )
       return Response(stats)
+
+@api_view(['GET'])
+def expense_filter(request):
+    qs=Expense.objects.all()
+    category=request.GET.get('category', None)
+    min_amount=request.GET.get('min_amount', None)
+    max_amount=request.GET.get('max_amount',None)
+    start_date=request.GET.get('start_date', None)
+    end_date=request.GET.get('end_date',None)
+    ordering=request.GET.get('ordering', None)
+
+    if category:
+        qs =qs.filter(category__name=category)
+    if min_amount:
+         qs=qs.filter(amount__gte=min_amount)
+    if max_amount:
+         qs=qs.filter(amount__lte=max_amount)
+    if start_date and end_date:
+         qs=qs.filter(date__gte=start_date, date__lte=end_date)
+    if ordering:
+         qs=qs.order_by(ordering)
+
+    #stats
+
+    total=qs.aggregate(Sum('amount'))['amount__sum'] or 0
+    count=qs.count()
+    average=qs.aggregate(Avg('amount'))['amount__avg'] or 0
+
+    serializer=ExpenseSerializer(qs, many=True)
+
+    return Response({
+        'count': count,
+        'total': total,
+        'average': average,
+        'expenses':serializer.data
+    })
