@@ -7,7 +7,7 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-class Expense(models.Model):
+class Transaction(models.Model):
     amount =models.DecimalField(max_digits=7, decimal_places=2)
     description = models.CharField(max_length=100)
     date=models.DateField()

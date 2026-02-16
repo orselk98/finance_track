@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import Category, Expense
+from .models import Category, Transaction
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name']
 
-class ExpenseSerializer(serializers.ModelSerializer):
+class TransactionSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)  #Just for reading
     category_id=serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
@@ -14,5 +14,5 @@ class ExpenseSerializer(serializers.ModelSerializer):
         write_only=True
     )
     class Meta:
-        model = Expense
+        model = Transaction
         fields = ['id', 'amount', 'description', 'date', 'category', 'category_id']
