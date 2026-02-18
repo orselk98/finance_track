@@ -115,3 +115,45 @@ class CategoryStatsTest(APITestCase):
         response=self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
+
+class TransactionFilterTest(APITestCase):
+    def setUp(self):
+        self.income_cat=Category.objects.create(name='Income')
+        self.needs_cat=Category.objects.create(name='Needs')
+        self.wants_cat=Category.objects.create(name='Wants')
+        self.savings_cat=Category.objects.create(name='Savings')
+        self.transaction1 =Transaction.objects.create(
+            amount= 60.00,
+            description="Test Description",
+            date='2026-01-01',
+            category=self.needs_cat
+
+        )
+        self.transaction2 =Transaction.objects.create(
+            amount= 100.00,
+            description="Test Description 2",
+            date='2026-01-02',
+            category=self.wants_cat
+
+        )
+        self.transaction3 =Transaction.objects.create(
+            amount= 200.00,
+            description="Test Description 3",
+            date='2026-01-03',
+            category=self.income_cat
+        )
+
+    def test_transaction_filter_category(self):
+        url='/api/transactions/filter/?category=Needs'
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(len(response.data['transactions']), 1)
+        self.assertEqual(response.data['transactions'][0]['category']['name'], 'Needs')
+
+    def test_filter_by_min_amount(self):
+        url='/api/transactions/filter/?min_amount=80'
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+        
