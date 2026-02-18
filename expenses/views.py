@@ -1,6 +1,8 @@
 from datetime import datetime
+import requests as http_requests
+from django.conf import settings
 from django.shortcuts import render
-from rest_framework import viewsets, status 
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Category, Transaction
@@ -108,3 +110,46 @@ def transaction_filter(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/bart-large-mnli'
+
+@api_view(['POST'])
+def ai_categorize(request):
+    description = request.data.get('description', None)
+    if not description:
+        return Response({'error': 'Description is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    category_names = list(Category.objects.values_list('name', flat=True))
+    if not category_names:
+        return Response({'error': 'No categories found in the database.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    headers = {}
+    hf_token = getattr(settings, 'HF_API_TOKEN', None)
+    if hf_token:
+        headers['Authorization'] = f'Bearer {hf_token}'
+
+    payload = {
+        'inputs': description,
+        'parameters': {'candidate_labels': category_names},
+    }
+
+    try:
+        response = http_requests.post(HF_API_URL, json=payload, headers=headers, timeout=30)
+        response.raise_for_status()
+    except http_requests.exceptions.RequestException:
+        return Response(
+            {'error': 'Failed to reach the AI categorization service.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    data = response.json()
+    suggested = [
+        {'category': label, 'confidence': round(score, 4)}
+        for label, score in zip(data['labels'], data['scores'])
+    ]
+
+    return Response({
+        'description': description,
+        'suggested_categories': suggested,
+    })
