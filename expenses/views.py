@@ -112,7 +112,7 @@ def transaction_filter(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/bart-large-mnli'
+HF_API_URL = 'https://router.huggingface.co/facebook/bart-large-mnli' 
 
 @api_view(['POST'])
 def ai_categorize(request):
