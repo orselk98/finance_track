@@ -1,15 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import TransactionViewSet, ai_categorize, category_stats, transaction_filter, transaction_summary
+from .views import CreditCardViewset, all_transactions, transaction_detail
 
 router =DefaultRouter()
-router.register(r'transactions', TransactionViewSet, basename='transaction')
+router.register(r'credit_cards', CreditCardViewset)
 
 urlpatterns = [
-    path('transactions/summary/',transaction_summary, name='transaction-summary'),
-    path('transactions/category-stats/', category_stats, name='category-stats'),
-    path('transactions/filter/',transaction_filter,name='transaction-filter'),
-    path('transactions/ai-categorize/',ai_categorize,name='ai-categorize'),
     path('', include(router.urls)),
-
+    path('transactions/', all_transactions, name='all-transactions'),
+    path('transaction-detail/<int:pk>/', transaction_detail, name='transaction-detail'),
 ]

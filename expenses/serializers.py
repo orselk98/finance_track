@@ -1,18 +1,20 @@
 from rest_framework import serializers
-from .models import Category, Transaction
+from .models import CreditCard, Transaction
 
-class CategorySerializer(serializers.ModelSerializer):
+class CreditCardSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = ['id', 'name']
+        model = CreditCard
+        fields = '__all__'
 
 class TransactionSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)  #Just for reading
-    category_id=serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(),
-        source ='category',
-        write_only=True
+    credit_card = CreditCardSerializer(read_only=True)
+    credit_card_id = serializers.PrimaryKeyRelatedField(
+        queryset=CreditCard.objects.all(),
+        source='credit_card',
+        write_only=True,
+        required=False
     )
     class Meta:
         model = Transaction
-        fields = ['id', 'amount', 'description', 'date', 'category', 'category_id']
+        fields = '__all__'
+
