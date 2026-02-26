@@ -46,3 +46,29 @@ def transaction_detail(request, pk):
         transaction.delete()
         return Response({"message": "Transaction deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['GET'])
+def transactions_list(request):
+    qs=Transaction.objects.all()
+    #Get all filter parameters
+    credit_card_id=request.GET.get('credit_card_id')
+    category=request.GET.get('category')
+    payment_method=request.GET.get('payment_method')
+    transaction_date=request.GET.get('date')
+
+    #Apply Filters
+    if credit_card_id:
+        qs=qs.filter(credit_card_id=credit_card_id)
+
+    if category:
+        qs=qs.filter(category=category)
+
+    if payment_method:
+        qs=qs.filter(payment_method=payment_method)
+    
+    if transaction_date:
+        qs=qs.filter(date=transaction_date)
+
+    serializer=TransactionSerializer(qs,many=True)
+    return Response(serializer.data)
+
+
