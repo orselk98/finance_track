@@ -5,6 +5,7 @@ from expenses.serializers import CreditCardSerializer , TransactionSerializer
 from .models import CreditCard, Transaction
 from rest_framework.response import Response
 from django.db.models import Avg
+import pandas as pd
 
 
 # TODO: Rebuild views
@@ -79,3 +80,28 @@ def transaction_stats_by_category(request):
     if not qs.exists():
         return Response({'message': 'You havent added any transactions yet'}, status=status.HTTP_200_OK)
     return Response(list(qs))
+
+
+@api_view(['GET'])
+def transaction_analytics(request):
+    if request.method == 'GET':
+        # Example analytics: Total spending by category
+        qs=Transaction.objects.all().values(
+            'category',
+            'payment_method',
+            'date',
+            'amount'
+        )
+        if not qs.exists():
+            return Response({'message': 'You havent added any transactions yet'}, status=status.HTTP_200_OK)
+        df=pd.DataFrame(qs)
+        total_transactions=len(df)
+        average_spending_by_category=df.groupby('category')['amount'].mean().to_dict()
+        total_spending_by_payment_method=df.groupby('payment_method')['amount'].sum().to_dict()
+        monthly_trends=df.groupby(df['date'].dt.to_period('M'))['amount'].sum().to_dict()
+        return Response({
+            'total_transactions': total_transactions,
+            'average_spending_by_category': average_spending_by_category,
+            'total_spending_by_payment_method': total_spending_by_payment_method,
+            'monthly_trends': monthly_trends
+        })
