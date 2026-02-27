@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from expenses.serializers import CreditCardSerializer , TransactionSerializer
 from .models import CreditCard, Transaction
 from rest_framework.response import Response
+from django.db.models import Avg
 
 
 # TODO: Rebuild views
@@ -72,3 +73,7 @@ def transactions_list(request):
     return Response(serializer.data)
 
 
+@api_view(['GET'])
+def transaction_stats_by_category(request):
+    qs=Transaction.objects.values('category').annotate(average_amount=Avg('amount'))
+    return Response(list(qs))
