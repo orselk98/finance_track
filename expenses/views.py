@@ -76,4 +76,6 @@ def transactions_list(request):
 @api_view(['GET'])
 def transaction_stats_by_category(request):
     qs=Transaction.objects.values('category').annotate(average_amount=Avg('amount'))
+    if not qs.exists():
+        return Response({'message': 'You havent added any transactions yet'}, status=status.HTTP_200_OK)
     return Response(list(qs))
