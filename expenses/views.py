@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from expenses.serializers import CreditCardSerializer , TransactionSerializer
 from .models import CreditCard, Transaction
 from rest_framework.response import Response
-from django.db.models import Avg
+from django.db.models import Avg, Sum
 import pandas as pd
 
 
@@ -106,3 +106,36 @@ def transaction_analytics(request):
             'total_spending_by_payment_method': total_spending_by_payment_method,
             'monthly_trends': monthly_trends
         })
+
+
+@api_view(['GET'])
+def budget_50_30_20(request):
+    totals = Transaction.objects.values('category').annotate(total=Sum('amount'))
+    totals_map = {item['category']: float(item['total']) for item in totals}
+
+    income = totals_map.get(Transaction.Category.INCOME, 0)
+    needs = totals_map.get(Transaction.Category.NEED, 0)
+    wants = totals_map.get(Transaction.Category.WANT, 0)
+    savings = totals_map.get(Transaction.Category.SAVING, 0)
+
+    if income == 0:
+        return Response({'message': 'No income transactions found.'}, status=status.HTTP_200_OK)
+
+    def breakdown(actual, target_pct):
+        target = round(income * target_pct / 100, 2)
+        actual_pct = round((actual / income) * 100, 2)
+        return {
+            'actual': round(actual, 2),
+            'actual_pct': actual_pct,
+            'target': target,
+            'target_pct': target_pct,
+            'difference': round(actual - target, 2),
+            'status': 'over' if actual > target else 'under' if actual < target else 'on_track',
+        }
+
+    return Response({
+        'income': round(income, 2),
+        'needs': breakdown(needs, 50),
+        'wants': breakdown(wants, 30),
+        'savings': breakdown(savings, 20),
+    })
