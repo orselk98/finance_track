@@ -98,7 +98,8 @@ def transaction_analytics(request):
         total_transactions=len(df)
         average_spending_by_category=df.groupby('category')['amount'].mean().to_dict()
         total_spending_by_payment_method=df.groupby('payment_method')['amount'].sum().to_dict()
-        monthly_trends=df.groupby(df['date'].dt.to_period('M'))['amount'].sum().to_dict()
+        df['date']=pd.to_datetime(df['date'])
+        monthly_trends={str(k): v for k, v in df.groupby(df['date'].dt.to_period('M'))['amount'].sum().to_dict().items()}
         return Response({
             'total_transactions': total_transactions,
             'average_spending_by_category': average_spending_by_category,
