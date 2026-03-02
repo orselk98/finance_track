@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from expenses.serializers import CreditCardSerializer , TransactionSerializer
 from .models import CreditCard, Transaction
 from rest_framework.response import Response
-from django.db.models import Avg, Sum
+from django.db.models import Avg, Sum, Count
 import pandas as pd
 
 
@@ -106,6 +106,62 @@ def transaction_analytics(request):
             'total_spending_by_payment_method': total_spending_by_payment_method,
             'monthly_trends': monthly_trends
         })
+
+
+@api_view(['GET'])
+def net_worth(request):
+    """
+    Returns a financial summary: total income, total expenses, and net balance.
+    Supports optional ?start_date=YYYY-MM-DD and ?end_date=YYYY-MM-DD filters.
+    """
+    qs = Transaction.objects.all()
+
+    # Optional date range filters
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if start_date:
+        qs = qs.filter(date__gte=start_date)
+    if end_date:
+        qs = qs.filter(date__lte=end_date)
+
+    totals = qs.values('category').annotate(total=Sum('amount'))
+    totals_map = {item['category']: float(item['total']) for item in totals}
+
+    income = totals_map.get(Transaction.Category.INCOME, 0)
+    needs = totals_map.get(Transaction.Category.NEED, 0)
+    wants = totals_map.get(Transaction.Category.WANT, 0)
+    savings = totals_map.get(Transaction.Category.SAVING, 0)
+    total_expenses = needs + wants
+
+    return Response({
+        'income': round(income, 2),
+        'total_expenses': round(total_expenses, 2),
+        'savings_allocated': round(savings, 2),
+        'net_balance': round(income - total_expenses - savings, 2),
+    })
+
+
+@api_view(['GET'])
+def top_spending(request):
+    """
+    Returns the top N transactions by amount (descending).
+    Supports optional ?limit=10 (default 5) and ?category= filters.
+    Only considers expense categories: need, want.
+    """
+    limit = int(request.GET.get('limit', 5))
+    category = request.GET.get('category')
+
+    qs = Transaction.objects.exclude(category=Transaction.Category.INCOME)
+
+    if category:
+        qs = qs.filter(category=category)
+
+    qs = qs.order_by('-amount')[:limit]
+    serializer = TransactionSerializer(qs, many=True)
+    return Response({
+        'count': len(serializer.data),
+        'results': serializer.data,
+    })
 
 
 @api_view(['GET'])
