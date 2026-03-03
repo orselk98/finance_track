@@ -18,6 +18,14 @@ class CreditCardViewset(viewsets.ModelViewSet):
 def all_transactions(request):
     if request.method =="GET":
         qs=Transaction.objects.all()
+        #Get all filter parameters
+        allowed_ordering_fields=['amount', 'date']
+        ordering=request.GET.get('ordering')
+        if ordering:
+            if ordering in allowed_ordering_fields:
+                qs=qs.order_by(ordering)
+            else:
+                return Response({'message': f'Invalid ordering field. Allowed fields: {allowed_ordering_fields}'}, status=status.HTTP_400_BAD_REQUEST)
         serializer=TransactionSerializer(qs,many=True)
         return Response(serializer.data)
     

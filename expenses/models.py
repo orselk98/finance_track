@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import date
+from django.core.exceptions import ValidationError
 
 class CreditCard(models.Model):
     card_name = models.CharField(max_length=40)
@@ -11,6 +12,10 @@ class CreditCard(models.Model):
     
     class Meta:
         verbose_name_plural = "Credit Cards"
+    
+    def clean(self):
+        if self.current_balance > self.credit_limit:
+            raise ValidationError("Current balance cannot exceed credit limit.")
 
 class Transaction(models.Model):
     title = models.CharField(max_length=100)
