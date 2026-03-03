@@ -5,6 +5,11 @@ class CreditCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = CreditCard
         fields = '__all__'
+        
+    def validate(self, data):
+        if data['credit_limit'] < data['current_balance']:
+            raise serializers.ValidationError("Current balance cannot exceed credit limit.")
+        return data
 
 class TransactionSerializer(serializers.ModelSerializer):
     credit_card = CreditCardSerializer(read_only=True)
