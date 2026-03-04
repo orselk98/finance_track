@@ -11,9 +11,18 @@ import pandas as pd
 # TODO: Rebuild views
 
 class CreditCardViewset(viewsets.ModelViewSet):
-    queryset=CreditCard.objects.all()
-    serializer_class = CreditCardSerializer
+        queryset=CreditCard.objects.all()
+        serializer_class = CreditCardSerializer
 
+        def create(self,request):
+            serializer=self.get_serializer(data=request.data)
+            try:
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                    return Response({'error': f"Cannot create credit card: Current balance cannot exceed credit limit."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 @api_view(['GET', 'POST'])
 def all_transactions(request):
     if request.method =="GET":

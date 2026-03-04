@@ -34,3 +34,17 @@ class CreditCardTest(APITestCase):
         self.assertEqual(response.data['card_name'], payload['card_name'])
         self.assertEqual(new_creditcard.credit_limit, payload['credit_limit'])
         self.assertEqual(new_creditcard.current_balance, payload['current_balance'])
+
+    def test_create_credit_card_post_invalid(self):
+        payload={
+            "card_name": "Test Card 4",
+            "credit_limit": 1000,
+            "current_balance": 2000
+        }
+        url=reverse('creditcard-list')
+        response=self.client.post(url, data=payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(CreditCard.objects.filter(card_name="Test Card 4").exists())
+        self.assertEqual(response.data["error"], "Cannot create credit card: Current balance cannot exceed credit limit.")
+
